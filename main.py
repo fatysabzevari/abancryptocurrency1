@@ -54,30 +54,42 @@ async def main():
 
 @app.post("/")
 async def place_order(crypto_name: str, crypto_amount: float):
-    price = get_crypto_price(crypto_name)
-    total_cost = price * crypto_amount
+    try:
+        # Get the current price of the cryptocurrency
+        price = get_crypto_price(crypto_name)
+        total_cost = price * crypto_amount
 
-    if total_cost < 10:
-        with MongoConnection() as mongo:
-            existing_order = await mongo.collection.find_one(
-            {"crypto_name": crypto_name, "processed": 0}
-        )
-
-        if existing_order:
+        # If the total cost is less than $10, accumulate orders
+        if total_cost < 10:
             with MongoConnection() as mongo:
-                await mongo.collection.update_one(
-                {"_id": existing_order["_id"]},
-                {"$inc": {"crypto_amount": crypto_amount}}
-            )
+                # Check if there's an existing order for the same cryptocurrency
+                existing_order = await mongo.collection.find_one(
+                    {"crypto_name": crypto_name, "processed": 0}
+                )
+
+            if existing_order:
+                with MongoConnection() as mongo:
+                    # Update the existing order's amount
+                    await mongo.collection.update_one(
+                        {"_id": existing_order["_id"]},
+                        {"$inc": {"crypto_amount": crypto_amount}}
+                    )
+            else:
+                # Create a new order for the cryptocurrency
+                new_order = {"crypto_name": crypto_name, "crypto_amount": crypto_amount, "processed": 0}
+                with MongoConnection() as mongo:
+                    await mongo.collection.insert_one(new_order)
         else:
-            new_order = {"crypto_name": crypto_name, "crypto_amount": crypto_amount, "processed": 0}
-            with MongoConnection() as mongo:
-                await mongo.collection.insert_one(new_order)
+            # Place a direct order on the exchange for larger purchases
+            buy_from_exchange(crypto_name, crypto_amount)
 
-    else:
-        buy_from_exchange(crypto_name, crypto_amount)
+        return {"message": "Order placed successfully"}
 
-    return {"message": "Order placed successfully"}
+    except Exception as e:
+        # Handle any exceptions that might occur during the order placement process
+        print(f"Error placing order: {e}")
+        return {"message": "Error placing order"}
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8080, reload=True)

@@ -17,7 +17,7 @@ Install the dependencies:
 ```bash
 Clone the repo
 
-git clone https://github.com/fatysabzevari/abancryptocurrency.git
+git clone https://github.com/fatysabzevari/abancryptocurrency1.git
 
 Setup an environment
 

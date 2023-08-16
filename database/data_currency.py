@@ -20,8 +20,9 @@ class MongoConnection:
                                           password='1234'
                                           ) if not self.client else self.client
 
-        self.db = self.client['db-exchange']
-        self.collection = self.db['collection']
+        self.db = self.client['crypto_exchange']
+        self.users_collection = self.db['users']
+        self.orders_collection = self.db['orders']
 
 
     def __enter__(self):

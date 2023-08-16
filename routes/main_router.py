@@ -2,33 +2,47 @@ from fastapi import FastAPI, HTTPException
 
 from database.data_currency import RedisConnection
 
-from database.data_currency import MongoConnection
+# from database.data_currency import MongoConnection
 
 app = FastAPI()
 
 
 
-
 def get_crypto_price(crypto_name: str) -> float:
-    cached_price = RedisConnection.get(crypto_name)
-    if cached_price:
-        return float(cached_price)
-    else:
-        #  querying the database for price
-        price = get_price_from_database(crypto_name)
-        RedisConnection.setex(crypto_name, 60 * 15, price)  # Cache for 15 minutes
-        return price
+    try:
+        # Check if the price is cached in Redis
+        cached_price = RedisConnection.get(crypto_name)
+        if cached_price:
+            return float(cached_price)
+        else:
+            # Query the database for price
+            price = get_price_from_database(crypto_name)
+            RedisConnection.setex(crypto_name, 60 * 15, price)  # Cache for 15 minutes
+            return price
+
+    except Exception as e:
+        # Handle any exceptions that might occur while getting the crypto price
+        print(f"Error getting crypto price: {e}")
+        return 0.0
+
 
 def get_price_from_database(crypto_name: str) -> float:
-    #  getting crypto price from the database
+    try:
+        # Getting crypto price from the database
+        crypto_prices = {"ABAN": 4.0}
+        return crypto_prices.get(crypto_name, 0.0)
 
-    crypto_prices = {"ABAN": 4.0}
-    return crypto_prices.get(crypto_name, 0.0)
+    except Exception as e:
+        # Handle any exceptions that might occur while getting price from the database
+        print(f"Error getting price from database: {e}")
+        return 0.0
+
 
 def buy_from_exchange(crypto_name: str, crypto_amount: float):
-    # Logic to make HTTP request to international exchanges
 
-    pass
+        # Logic to make HTTP request to international exchanges
+        pass
+
 
 
 # @app.post("/")
